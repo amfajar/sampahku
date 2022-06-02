@@ -1,0 +1,9 @@
+os
+io
+json
+flask
+flask_ngrok
+werkzeug
+numpy
+tensorflow
+PIL

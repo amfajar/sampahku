@@ -52,9 +52,6 @@ def prepare_image(img):
 
 classes=['cardboard', 'compost', 'glass', 'metal', 'paper', 'plastic']
 
-#@app.route("/")
-#def hello():
-#    return "Hello, World!"
 
 @app.route('/', methods=["GET", "POST"])
 def upload_file():
