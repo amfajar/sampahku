@@ -91,12 +91,12 @@ def upload_file():
                 data["predictions"].append(r)
                 # indicate that the request was a success
                 data["success"] = True
-                kategori = ""
-                if(prediction_label == 'compost'):
-                    kategori = "Organic"
-                else:
-                    kategori = "inorganic"
-                json_object = json.dumps(kategori, indent = 4)
+                # kategori = ""
+                # if(prediction_label == 'compost'):
+                #     kategori = "Organic"
+                # else:
+                #     kategori = "inorganic"
+                json_object = json.dumps(prediction_label, indent = 4)
                 return str(json_object)              
 
         return str(data)
