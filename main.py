@@ -25,7 +25,7 @@ from flask_ngrok import run_with_ngrok
 from flask import Flask, request, redirect, url_for, jsonify, Response
 
 app = Flask(__name__)
-# run_with_ngrok(app)
+run_with_ngrok(app)
 # folder to storage, can be changed into cloud storage?
 app.config["UPLOAD_FOLDER"] = "Upload"
 
@@ -102,4 +102,4 @@ def upload_file():
         return str(data)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
