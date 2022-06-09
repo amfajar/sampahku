@@ -1,8 +1,4 @@
-import os
 import io
-import json
-import flask
-import werkzeug
 #import numpy for number array handling and represent rgb image pixel values
 import numpy as np
 
@@ -23,6 +19,7 @@ from keras import backend as K
 
 from flask_ngrok import run_with_ngrok
 from flask import Flask, request, redirect, url_for, jsonify, Response
+
 
 app = Flask(__name__)
 run_with_ngrok(app)
@@ -46,8 +43,6 @@ model_load()
 def prepare_image(img):
     img = tf.keras.utils.img_to_array(img)
     img = np.expand_dims(img, axis=0)
-    # img = tf.keras.applications.imagenet_utils.preprocess_input(img)
-    # return the processed image
     return img
 
 classes=['cardboard', 'compost', 'glass', 'metal', 'paper', 'plastic']
@@ -55,23 +50,19 @@ classes=['cardboard', 'compost', 'glass', 'metal', 'paper', 'plastic']
 
 @app.route('/', methods=["GET", "POST"])
 def upload_file():
-    data = {"success": False}
     if request.method == "POST":
-        if request.files.get("image"):
-            file = flask.request.files["image"]
-        #    filename = file.filename
-            filename = werkzeug.utils.secure_filename(file.filename)
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            file.save(filepath)
-           # Load the saved image using Keras.
-            # Resize it to the Xception format of 299x299 pixels.
+        file = request.files.get('image')
+        if file is None or file.filename == "":
+            return jsonify({"error": "no file"})
+
+        try:
+            image_bytes = file.read()
+            save_to_memory = io.BytesIO(image_bytes)
             image_size = (224, 224)
-            im = keras.preprocessing.image.load_img(filepath,
+            im = keras.preprocessing.image.load_img(save_to_memory,
                                                     target_size=image_size)
-
-            # Preprocess the image and prepare it for classification.
             image = prepare_image(im)
-
+            
             global graph
             with graph.as_default():
                 model = keras.models.load_model("ml-model/my_model1.h5", compile = False)
@@ -79,27 +70,60 @@ def upload_file():
                 result = model.predict(image)
                 print(result)
                 # results = decode_predictions(preds)
-                data["predictions"] = []
-
                 prediction = result
                 #return position of max
                 MaxPosition=np.argmax(prediction)  
                 prediction_label=classes[MaxPosition]
-                    
-                # labelName = names[int(label)]
-                r = {"labelName": prediction_label}
-                data["predictions"].append(r)
-                # indicate that the request was a success
-                data["success"] = True
-                # kategori = ""
-                # if(prediction_label == 'compost'):
-                #     kategori = "Organic"
-                # else:
-                #     kategori = "inorganic"
-                json_object = json.dumps(prediction_label, indent = 4)
-                return str(json_object)              
+            return jsonify(prediction_label)
+        except Exception as e:
+            return jsonify({"error": str(e)})
 
-        return str(data)
+    return "OK"
+    # data = {"success": False}
+    # if request.method == "POST":
+    #     if request.files.get("image"):
+    #         file = flask.request.files["image"]
+    #     #    filename = file.filename
+    #         filename = werkzeug.utils.secure_filename(file.filename)
+    #         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    #         file.save(filepath)
+    #        # Load the saved image using Keras.
+    #         # Resize it to the Xception format of 299x299 pixels.
+    #         image_size = (224, 224)
+    #         im = keras.preprocessing.image.load_img(filepath,
+    #                                                 target_size=image_size)
+
+    #         # Preprocess the image and prepare it for classification.
+    #         image = prepare_image(im)
+
+    #         global graph
+    #         with graph.as_default():
+    #             model = keras.models.load_model("ml-model/my_model1.h5", compile = False)
+    #             graph = tf.compat.v1.Session().graph
+    #             result = model.predict(image)
+    #             print(result)
+    #             # results = decode_predictions(preds)
+    #             data["predictions"] = []
+
+    #             prediction = result
+    #             #return position of max
+    #             MaxPosition=np.argmax(prediction)  
+    #             prediction_label=classes[MaxPosition]
+                    
+    #             # labelName = names[int(label)]
+    #             r = {"labelName": prediction_label}
+    #             data["predictions"].append(r)
+    #             # indicate that the request was a success
+    #             data["success"] = True
+    #             # kategori = ""
+    #             # if(prediction_label == 'compost'):
+    #             #     kategori = "Organic"
+    #             # else:
+    #             #     kategori = "inorganic"
+    #             json_object = json.dumps(prediction_label, indent = 4)
+    #             return str(json_object)              
+
+    #     return str(data)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
